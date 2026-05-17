@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:site_management_flutter_app/models/site_model.dart';
-import 'package:site_management_flutter_app/views/widgets/site_card.dart';
 import 'package:site_management_flutter_app/views/widgets/site_detail_bottomsheet.dart';
+import '../../providers/providers.dart';
+import '../widgets/site_card.dart';
 
-/// Dashboard Screen - Main screen displaying the site management dashboard
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  @override
+  Widget build(BuildContext context) {
+    final filteredSites = ref.watch(filteredSitesProvider);
+    final isLoading = ref.watch(isLoadingProvider);
+    final searchQuery = ref.watch(searchQueryProvider);
+    final siteState = ref.watch(siteNotifierProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F1419),
       appBar: AppBar(
@@ -30,25 +40,9 @@ class DashboardScreen extends ConsumerWidget {
             color: Colors.white,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.notifications_outlined,
-              color: Colors.cyan.shade400,
-            ),
-            onPressed: () {},
-            tooltip: 'Notifications',
-          ),
-          IconButton(
-            icon: Icon(Icons.search, color: Colors.cyan.shade400),
-            onPressed: () {},
-            tooltip: 'Search',
-          ),
-        ],
       ),
       body: Column(
         children: [
-          // Search Bar
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Container(
@@ -57,16 +51,24 @@ class DashboardScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: TextField(
-                onChanged: (value) {},
+                controller: _searchController,
+                onChanged: (value) {
+                  ref.read(searchQueryProvider.notifier).state = value;
+                },
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Search Site Name',
                   hintStyle: TextStyle(color: Colors.grey[600], fontSize: 16),
                   prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.clear, color: Colors.grey[600]),
-                    onPressed: () {},
-                  ),
+                  suffixIcon: searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.clear, color: Colors.grey[600]),
+                          onPressed: () {
+                            _searchController.clear();
+                            ref.read(searchQueryProvider.notifier).state = '';
+                          },
+                        )
+                      : null,
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -77,7 +79,6 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ),
 
-          // Stats Cards
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
@@ -87,7 +88,7 @@ class DashboardScreen extends ConsumerWidget {
                     icon: Icons.grid_view,
                     iconColor: Colors.cyan.shade400,
                     label: 'Total Sites',
-                    value: '9',
+                    value: siteState.sites.length.toString(),
                     backgroundColor: const Color(0xFF1E2329),
                   ),
                 ),
@@ -97,7 +98,10 @@ class DashboardScreen extends ConsumerWidget {
                     icon: Icons.flash_on,
                     iconColor: Colors.amber.shade400,
                     label: 'Active Sites',
-                    value: '2',
+                    value: siteState.sites
+                        .where((s) => s.status == 'Active')
+                        .length
+                        .toString(),
                     backgroundColor: const Color(0xFF1E2329),
                   ),
                 ),
@@ -107,14 +111,13 @@ class DashboardScreen extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // Recent Sites Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Recent Sites',
+                  'Sites',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -127,45 +130,98 @@ class DashboardScreen extends ConsumerWidget {
 
           const SizedBox(height: 8),
 
-          // Site List
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {},
-              color: Colors.cyan.shade400,
-              backgroundColor: const Color(0xFF1E2329),
-              child: ListView.builder(
-                padding: const EdgeInsets.only(bottom: 16),
-                itemCount: 9,
-                itemBuilder: (context, index) {
-                  // final site = filteredSites[index];
-                  return SiteCard(
-                    site: new Site(
-                      id: '3',
-                      name: 'name',
-                      location: 'location',
-                      manager: 'manager',
-                      status: 'Active',
+            child: isLoading
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: Colors.cyan),
+                        SizedBox(height: 16),
+                        Text(
+                          'Loading sites...',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                      ],
                     ),
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => SiteDetailBottomSheet(
-                          site: new Site(
-                            id: '3',
-                            name: 'name',
-                            location: 'location',
-                            manager: 'manager',
-                            status: 'Active',
+                  )
+                : siteState.error != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red[300],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error: ${siteState.error}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.red,
                           ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            ref.read(siteNotifierProvider.notifier).refresh();
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.cyan.shade400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : filteredSites.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          searchQuery.isEmpty
+                              ? 'No sites available'
+                              : 'No sites found matching "$searchQuery"',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    itemCount: filteredSites.length,
+                    itemBuilder: (context, index) {
+                      final site = filteredSites[index];
+                      return Animate(
+                        effects: [FadeEffect(), SlideEffect()],
+                        child: SiteCard(
+                          site: site,
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) =>
+                                  SiteDetailBottomSheet(site: site),
+                            );
+                          },
                         ),
                       );
                     },
-                  );
-                },
-              ),
-            ),
+                  ),
           ),
         ],
       ),

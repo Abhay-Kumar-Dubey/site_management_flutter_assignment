@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:site_management_flutter_app/models/site_model.dart';
+import 'package:site_management_flutter_app/providers/providers.dart';
 
 /// Site Card Widget - Displays individual site information in dark theme
 class SiteCard extends ConsumerWidget {
@@ -20,6 +21,9 @@ class SiteCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: InkWell(
+        splashColor: Colors.cyan.withValues(alpha: 0.2),
+        highlightColor: Colors.white.withValues(alpha: 0.05),
+
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -27,10 +31,8 @@ class SiteCard extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Row with Icon, Name, and Status
               Row(
                 children: [
-                  // Site Icon
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -49,7 +51,6 @@ class SiteCard extends ConsumerWidget {
                   ),
                   const SizedBox(width: 16),
 
-                  // Site Name and Location
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,7 +85,6 @@ class SiteCard extends ConsumerWidget {
                     ),
                   ),
 
-                  // Status Badge
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -128,7 +128,6 @@ class SiteCard extends ConsumerWidget {
 
               const SizedBox(height: 20),
 
-              // Manager Info Row
               Row(
                 children: [
                   Expanded(
@@ -156,42 +155,16 @@ class SiteCard extends ConsumerWidget {
                       ],
                     ),
                   ),
-
-                  // Last Updated (mock data)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'LAST UPDATED',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '2h ago',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[300],
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
 
               const SizedBox(height: 20),
 
-              // Site Visibility Toggle
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'SITE VISIBILITY',
+                    'STATUS',
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.grey[600],
@@ -201,7 +174,11 @@ class SiteCard extends ConsumerWidget {
                   ),
                   Switch(
                     value: isActive,
-                    onChanged: (value) {},
+                    onChanged: (value) {
+                      ref
+                          .read(siteNotifierProvider.notifier)
+                          .toggleSiteStatus(site.id);
+                    },
                     activeTrackColor: Colors.cyan.shade400,
                     inactiveThumbColor: Colors.grey[600],
                     inactiveTrackColor: Colors.grey[800],

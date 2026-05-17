@@ -7,31 +7,6 @@ class SiteDetailBottomSheet extends StatelessWidget {
 
   const SiteDetailBottomSheet({super.key, required this.site});
 
-  Future<void> _contactManager(BuildContext context) async {
-    final Uri phoneUri = Uri(scheme: 'tel', path: '');
-
-    try {
-      if (await canLaunchUrl(phoneUri)) {
-        await launchUrl(phoneUri);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not launch phone dialer'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isActive = site.status == 'Active';
@@ -44,7 +19,6 @@ class SiteDetailBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle Bar
           Container(
             margin: const EdgeInsets.only(top: 12),
             width: 40,
@@ -153,7 +127,7 @@ class SiteDetailBottomSheet extends StatelessWidget {
                   icon: Icons.gps_fixed,
                   iconColor: Colors.blue.shade400,
                   label: 'GPS Coordinates',
-                  value: '',
+                  value: '12.9796 N, 77.5946 E',
                 ),
 
                 const SizedBox(height: 16),
@@ -165,22 +139,13 @@ class SiteDetailBottomSheet extends StatelessWidget {
                   value: site.manager,
                 ),
 
-                const SizedBox(height: 16),
-
-                _buildInfoRow(
-                  icon: Icons.phone,
-                  iconColor: Colors.green.shade400,
-                  label: 'Contact',
-                  value: 'site.managerContact',
-                ),
-
                 const SizedBox(height: 24),
 
                 SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton.icon(
-                    onPressed: () => _contactManager(context),
+                    onPressed: () {},
                     icon: const Icon(Icons.phone, size: 20),
                     label: const Text(
                       'Contact Manager',
