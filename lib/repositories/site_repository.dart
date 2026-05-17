@@ -1,8 +1,6 @@
 import '../models/site_model.dart';
 
-/// Site Repository - Handles data operations and simulates API calls
 class SiteRepository {
-  /// Mock data for sites
   static final List<Map<String, dynamic>> _mockData = [
     {
       "id": "1",
